@@ -1,52 +1,54 @@
-import socket
-import os
+#import socket module
+from socket import *
 
-def handle_request(client_socket):
-    # Receive the request from the client
-    request = client_socket.recv(1024).decode()
-    print("Request:")
-    print(request)
+# Create a server socket
+serverSocket = socket(AF_INET, SOCK_STREAM)
+
+# Prepare a server socket
+# Bind the socket to a specific address and port
+serverPort = 6789
+serverSocket.bind(('', serverPort))
+
+# Listen for incoming connections
+serverSocket.listen(1)
+print('The server is ready to receive requests...')
+
+while True:
+    # Establish the connection
+    connectionSocket, addr = serverSocket.accept()
+    print('Accepted connection from:', addr)
     
-    # Extract the filename from the request
-    filename = request.split()[1]
-    if filename == '/':
-        filename = '/index.html'
-    
-    # Load the file content
     try:
-        with open('.' + filename, 'rb') as file:
-            content = file.read()
-        response_headers = 'HTTP/1.1 200 OK\n\n'
-        response_body = content
-    except FileNotFoundError:
-        response_headers = 'HTTP/1.1 404 Not Found\n\n'
-        response_body = b'<html><body><h1>404 Not Found</h1></body></html>'
-    
-    # Send the response to the client
-    response = response_headers.encode() + response_body
-    client_socket.send(response)
-    
-    # Close the connection
-    client_socket.close()
-
-def main():
-    # Create a socket
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    # Bind the socket to a host and port
-    server_socket.bind(('127.0.0.1', 6789))
-    
-    # Listen for incoming connections
-    server_socket.listen(1)
-    print("Server is listening on port 6789...")
-    
-    while True:
-        # Accept a new connection
-        client_socket, client_address = server_socket.accept()
-        print("Connection from:", client_address)
+        # Receive the HTTP request from the client
+        message = connectionSocket.recv(1024).decode()
+        print('Received request:\n', message)
         
-        # Handle the client's request
-        handle_request(client_socket)
+        # Extract the filename from the request
+        filename = message.split()[1]
+        file_path = filename[1:]  # Remove the leading '/'
+        
+        try:
+            # Open and read the requested file
+            with open(file_path, 'rb') as file:
+                outputdata = file.read()
+                
+            # Send the HTTP response header
+            header = 'HTTP/1.1 200 OK\r\n\r\n'
+            connectionSocket.send(header.encode())
+            
+            # Send the content of the requested file to the client
+            connectionSocket.send(outputdata)
+        except FileNotFoundError:
+            # If the file is not found, send a "404 Not Found" response
+            not_found_response = 'HTTP/1.1 404 Not Found\r\n\r\n'
+            html_content = '<html><body><h1>404 Not Found</h1></body></html>'
+            response = not_found_response + html_content
+            connectionSocket.send(response.encode())
+        
+        # Close the connection
+        connectionSocket.close()
+    except Exception as e:
+        print('Error handling request:', e)
 
-if __name__ == "__main__":
-    main()
+# Close the server socket (Note: This will never be reached in this example)
+serverSocket.close()
