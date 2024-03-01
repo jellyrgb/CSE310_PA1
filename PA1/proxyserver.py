@@ -19,10 +19,10 @@ while True:
 
     print(message.split()[1])
     filename = message.split()[1].partition("/")[2]
-    print(filename)
+    print("filename: " + filename)
     fileExist = "false"
     filetouse = "/" + filename
-    print(filetouse)
+    print("filetouse: " + filetouse)
 
     try:
         f = open(filetouse[1:], "r", encoding='utf-8')
@@ -40,7 +40,7 @@ while True:
         if fileExist == "false":
             c = socket(AF_INET, SOCK_STREAM)
             hostn = filename.replace("www.", "", 1)
-            print(hostn)
+            print("Hostn: " + hostn)
 
             try:
                 c.connect((hostn, 80))
@@ -62,7 +62,6 @@ while True:
             tcpCliSock.send(b"Content-Type:text/html\r\n")
             tcpCliSock.send(b"\r\n")
 
-    # Close the client and the server sockets
     tcpCliSock.close()
 
 tcpSerSock.close()
